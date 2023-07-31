@@ -1,15 +1,17 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { Address } from './entities/address.entity';
 import { ProviderConstants } from 'src/common/constant/providers.constant';
 
 import { AddressType } from './dto/address.dto';
 import { Transaction } from 'sequelize';
 import { Order } from '../order/entities/order.entity';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Injectable()
 export class AddressService {
   constructor(
     @Inject(ProviderConstants.ADDRESS) private addressRepo: typeof Address,
+    @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) {}
   async addAddress(addressInfo: AddressType, transaction: Transaction) {
     const newAdd = await this.addressRepo.create(
@@ -18,7 +20,7 @@ export class AddressService {
       },
       { transaction: transaction },
     );
-
+    this.logger.log(`address Added with Id=${newAdd.id}`);
     return newAdd;
   }
   async getAddress(orderId: number) {
@@ -56,7 +58,10 @@ export class AddressService {
         Math.pow(Math.sin(disLong / 2), 2);
 
     const Kilometer = 6371;
-    return 2 * Math.asin(Math.sqrt(a)) * Kilometer;
+    const time = 2 * Math.asin(Math.sqrt(a)) * Kilometer;
+    this.logger.log(`Time for Certain Distance with Id=${time}`);
+
+    return time;
   }
 
   addressMathPI(address: number[]) {

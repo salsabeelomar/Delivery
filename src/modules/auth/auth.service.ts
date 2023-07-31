@@ -3,6 +3,7 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
+  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -11,26 +12,33 @@ import { User } from './entities/user.entity';
 import { SignInType, SignUpType, payloadToken } from './dto';
 import { ProviderConstants } from 'src/common/constant/providers.constant';
 import { CheckExisting } from 'src/common/utils/checkExisting';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
 @Injectable()
 export class AuthService {
   constructor(
     @Inject(ProviderConstants.AUTH) private authRepo: typeof User,
+    @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
     private readonly jwt: JwtService,
   ) {}
 
   async getEmail(email: string): Promise<User> {
-    return await this.authRepo.findOne({
+    const getEmail = await this.authRepo.findOne({
       attributes: ['id', 'email'],
       where: { email: email },
     });
+    this.logger.debug('Find Email');
+    return getEmail;
   }
   generateToken(user: payloadToken): string {
     const payload = {
       sub: user.id,
       user: { name: user.name, email: user.email, role: user.role },
     };
-    return this.jwt.sign(payload);
+    const token = this.jwt.sign(payload);
+    this.logger.debug('Sign Token ');
+
+    return token;
   }
 
   async signIn(userInfo: SignInType) {
@@ -45,13 +53,17 @@ export class AuthService {
 
     CheckExisting(match, UnauthorizedException, 'Password not correct');
 
+    this.logger.log(`User Signed with id ${getPass.id} `);
     const user: payloadToken = {
       id: getPass.id,
       email: getPass.email,
       name: getPass.name,
       role: getPass.role,
     };
-    return { user, token: this.generateToken(user) };
+    return {
+      message: 'Signed  Successfully',
+      data: { user, token: this.generateToken(user) },
+    };
   }
 
   async signup(userInfo: SignUpType) {
@@ -65,12 +77,17 @@ export class AuthService {
       password: hashedPass,
     });
 
+    this.logger.log(`User Signup with id ${newUser.id} `);
+
     const user: payloadToken = {
       id: newUser.id,
       email: newUser.email,
       name: newUser.name,
       role: newUser.role,
     };
-    return { user, token: this.generateToken(user) };
+    return {
+      message: 'Signed Up Successfully',
+      data: { user, token: this.generateToken(user) },
+    };
   }
 }

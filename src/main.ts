@@ -7,6 +7,8 @@ import { UserService } from './modules/user/user.service';
 import { JwtService } from '@nestjs/jwt';
 import { transports, format } from 'winston';
 import { WinstonModule } from 'nest-winston';
+import { RequestInterceptor } from './common/interceptor/request.interceptor';
+
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: WinstonModule.createLogger({
@@ -50,6 +52,7 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe());
   app.useGlobalGuards(new AuthGuard(reflect, userService, jwt));
   app.useGlobalGuards(new Roles(reflect));
+  app.useGlobalInterceptors(new RequestInterceptor());
 
   await app.listen(3000);
 }

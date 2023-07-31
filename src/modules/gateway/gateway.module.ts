@@ -9,7 +9,6 @@ import { OrderProvider } from '../order/order.providers';
 import { AddressService } from '../address/address.service';
 import { addressProvider } from '../address/address.providers';
 
-
 @Module({
   imports: [
     JwtModule.registerAsync({
@@ -25,10 +24,8 @@ import { addressProvider } from '../address/address.providers';
     AddressService,
     GatewayService,
     UserService,
-    OrderService,
     ...addressProvider,
     ...authProvider,
-    ...OrderProvider,
   ],
 })
 export class GatewayModule {}

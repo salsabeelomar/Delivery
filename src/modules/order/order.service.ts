@@ -16,12 +16,14 @@ import { CheckExisting } from 'src/common/utils/checkExisting';
 import { ORDER_EVENTS } from 'src/common/events';
 import { Status } from 'src/common/types/enum/status';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { DeliveryService } from '../delivery/delivery.service';
 
 @Injectable()
 export class OrderService {
   constructor(
     @Inject(ProviderConstants.ORDER) private orderRepo: typeof Order,
     @Inject(AddressService) private addressService: AddressService,
+    @Inject(DeliveryService) private deliveryService: DeliveryService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
     private readonly eventEmitter: EventEmitter2,
   ) {}
@@ -98,7 +100,11 @@ export class OrderService {
       transaction,
     });
     this.logger.log('Find All order from manager ', allOrder);
-    return allOrder;
+    return {
+      data: {
+        orders: allOrder,
+      },
+    };
   }
   async updateOrder(
     name: string,
@@ -109,10 +115,11 @@ export class OrderService {
     const updateOrder = await this.orderRepo.update(
       {
         name,
+        updateBy: userId,
       },
       {
         where: { id: orderId, userId },
-        // transaction,
+        transaction,
       },
     );
     CheckExisting(updateOrder[0], BadRequestException, 'Failed to update name');
@@ -128,7 +135,6 @@ export class OrderService {
     userId: number,
     transaction: Transaction,
   ) {
-    console.log({ status, orderId, userId });
     const updateOrder = await this.orderRepo.update(
       {
         status: status,
@@ -139,7 +145,9 @@ export class OrderService {
         transaction,
       },
     );
-
+    if (status === 'Approved') {
+      await this.deliveryService.createDelivery(userId, orderId, transaction);
+    }
     CheckExisting(
       updateOrder[0],
       BadRequestException,
@@ -172,6 +180,8 @@ export class OrderService {
     });
     this.logger.log('Get Order By Id', order);
 
-    return order;
+    return {
+      data: order,
+    };
   }
 }

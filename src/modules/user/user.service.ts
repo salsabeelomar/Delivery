@@ -20,7 +20,7 @@ export class UserService {
       role: user.getDataValue('role'),
     };
 
-    this.logger.log(`The user Id  ${userData.id}`);
+    this.logger.log(`The user Id  = ${userData.id}`);
 
     return { ...userData };
   }
