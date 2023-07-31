@@ -4,6 +4,7 @@ import { ProviderConstants } from 'src/common/constant/providers.constant';
 
 import { AddressType } from './dto/address.dto';
 import { Transaction } from 'sequelize';
+import { Order } from '../order/entities/order.entity';
 
 @Injectable()
 export class AddressService {
@@ -20,10 +21,26 @@ export class AddressService {
 
     return newAdd;
   }
-  async calculateDistance(addressId: number) {
-    const address = await this.addressRepo.findByPk(addressId, {
+  async getAddress(orderId: number) {
+    const address = await this.addressRepo.findOne({
       attributes: ['pickup_lat', 'pickup_lng', 'dropoff_lat', 'dropoff_lng'],
+      where: { orderId },
+      include: {
+        model: Order,
+        attributes: ['userId'],
+      },
     });
+
+    const time = this.calculateDistance({
+      dropoff_lat: address.dropoff_lat,
+      pickup_lat: address.pickup_lat,
+      dropoff_lng: address.dropoff_lng,
+      pickup_lng: address.pickup_lng,
+    });
+    return { time, userId: address.order.userId };
+  }
+
+  calculateDistance(address: Omit<AddressType, 'orderId'>) {
     const newAddress = this.addressMathPI([
       address.dropoff_lat,
       address.pickup_lat,

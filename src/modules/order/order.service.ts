@@ -31,26 +31,24 @@ export class OrderService {
     userId: number,
     transaction: Transaction,
   ) {
-    const address = await this.addressService.addAddress(
-      {
-        ...orderInfo.address,
-        OrderOwner: userId,
-      },
-      transaction,
-    );
-    this.logger.log('new Address added ', address);
-
     const order = await this.orderRepo.create(
       {
         ...orderInfo,
         status: 'Pending',
-        addressId: address.id,
         userId,
       },
       { transaction },
     );
-    this.logger.log('new order added ', address);
+    this.logger.log('new order added ', order);
 
+    const address = await this.addressService.addAddress(
+      {
+        ...orderInfo.address,
+        orderId: order.id,
+      },
+      transaction,
+    );
+    this.logger.log('new Address added ', address);
     const payload = {
       order: {
         id: order.id,
@@ -175,14 +173,5 @@ export class OrderService {
     this.logger.log('Get Order By Id', order);
 
     return order;
-  }
-  async getAddress(orderId: number) {
-    const order = await this.orderRepo.findByPk(orderId, {
-      attributes: ['addressId', 'userId'],
-    });
-    this.logger.log(' Order Address ' + order.addressId);
-    const time = await this.addressService.calculateDistance(order.addressId);
-
-    return { time, userId: order.userId };
   }
 }

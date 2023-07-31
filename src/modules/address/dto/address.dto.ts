@@ -24,7 +24,8 @@ export class AddressType {
   @Min(-90, { message: 'Latitude must be greater than or equal to -90' })
   @Max(90, { message: 'Latitude must be less than or equal to 90' })
   dropoff_lat: number;
+
   @IsNumber()
   @IsNotEmpty()
-  OrderOwner: number;
+  orderId: number;
 }

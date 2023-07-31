@@ -53,13 +53,6 @@ export class Order extends Model {
   })
   price: number;
 
-  @ForeignKey(() => Address)
-  @Column({
-    type: DataType.INTEGER,
-    allowNull: false,
-  })
-  addressId: number;
-
   @ForeignKey(() => User)
   @Column({
     type: DataType.INTEGER,
@@ -81,7 +74,4 @@ export class Order extends Model {
 
   @BelongsTo(() => User)
   user: User;
-
-  @BelongsTo(() => Address)
-  address: Address;
 }

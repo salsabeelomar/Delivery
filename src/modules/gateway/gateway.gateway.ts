@@ -25,8 +25,8 @@ import { CheckExisting } from 'src/common/utils/checkExisting';
 import { ROOM_GATEWAY, ORDER_GATEWAY } from 'src/common/gateways';
 import { ORDER_EVENTS } from 'src/common/events';
 import { Status } from 'src/common/types/enum/status';
-import { OrderService } from '../order/order.service';
 import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { AddressService } from '../address/address.service';
 
 @WebSocketGateway(8080)
 export class GatewayService
@@ -35,7 +35,7 @@ export class GatewayService
   constructor(
     private jwt: JwtService,
     private userService: UserService,
-    @Inject(OrderService) private orderService: OrderService,
+    @Inject(AddressService) private addressService: AddressService,
     @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) {}
   @WebSocketServer()
@@ -80,10 +80,10 @@ export class GatewayService
 
   @SubscribeMessage(ORDER_GATEWAY.DISTANCE)
   async ShowDistanceOrder(
-    @MessageBody() { id }: { id: number },
+    @MessageBody() { addressId }: { addressId: number },
     @ConnectedSocket() client: Socket,
   ) {
-    const { time, userId } = await this.orderService.getAddress(id);
+    const { time, userId } = await this.addressService.getAddress(addressId);
 
     if (time < 2) {
       this.server

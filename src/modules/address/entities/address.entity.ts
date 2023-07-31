@@ -8,6 +8,7 @@ import {
   BelongsTo,
 } from 'sequelize-typescript';
 import { User } from 'src/modules/auth/entities/user.entity';
+import { Order } from 'src/modules/order/entities/order.entity';
 
 @Table({
   tableName: 'addresses',
@@ -47,12 +48,12 @@ export class Address extends Model {
   })
   dropoff_lng: number;
 
-  @ForeignKey(() => User)
+  @ForeignKey(() => Order)
   @Column({
     type: DataType.INTEGER,
   })
-  OrderOwner: number;
-  
+  orderId: number;
+
   @ForeignKey(() => User)
   @Column({
     type: DataType.INTEGER,
@@ -64,6 +65,10 @@ export class Address extends Model {
     type: DataType.INTEGER,
   })
   deletedBy: number;
+  
   @BelongsTo(() => User)
   user: User;
+
+  @BelongsTo(() => Order)
+  order: Order;
 }

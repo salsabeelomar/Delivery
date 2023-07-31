@@ -20,6 +20,6 @@ export class OrderType {
   @IsNumber()
   @IsNotEmpty()
   price: number;
-  
-  address: AddressType;
+
+  address: Omit<AddressType, 'orderId'>;
 }
