@@ -7,6 +7,7 @@ import {
   Put,
   Query,
   Param,
+  ParseIntPipe,
 } from '@nestjs/common';
 import { OrderService } from './order.service';
 import { User } from 'src/common/decorator/user.decorator';
@@ -53,7 +54,7 @@ export class OrderController {
     return await this.orderService.showOrder(id, transaction);
   }
 
-  @Roles(Role.client)
+  @Roles(Role.delivery)
   @Get(':id')
   async showOrderById(
     @Param() { id }: { id: number },
@@ -62,10 +63,13 @@ export class OrderController {
     return await this.orderService.showOrderById(id, transaction);
   }
 
-  @Roles(Role.client)
+  @Roles(Role.delivery)
   @Put('update')
   async updateStatus(
-    @Query() { orderId, status }: { orderId: number; status: Status },
+    @Query('orderId', new ParseIntPipe())
+    orderId: number,
+    @Query('status')
+    status: Status,
     @TransactionDec() transaction: Transaction,
     @User() { id }: { id: number },
   ) {

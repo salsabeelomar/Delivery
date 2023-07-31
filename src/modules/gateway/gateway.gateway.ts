@@ -40,8 +40,7 @@ export class GatewayService
   ) {}
   @WebSocketServer()
   server: Server;
-  afterInit(server: any) {
-  }
+  afterInit(server: any) {}
   async handleConnection(client: Socket) {
     const token = client.handshake.headers.authorization.split('Bearer ')[1];
     try {
@@ -56,7 +55,7 @@ export class GatewayService
           break;
 
         case ROOM_GATEWAY.CLIENT:
-          client.join(ROOM_GATEWAY.CLIENT);
+          client.join(ROOM_GATEWAY.CLIENT + user.id);
           break;
 
         default: {
@@ -79,39 +78,33 @@ export class GatewayService
     console.log('Client disconnected:', client.id);
   }
 
-  @SubscribeMessage(ORDER_GATEWAY.CERATE)
-  async createOrder(@ConnectedSocket() client: Socket, payload: any) {
-    return payload;
-  }
-
-  @SubscribeMessage(ORDER_GATEWAY.APPROVED)
-  async approvedOrder(
-    @MessageBody() payload,
-    @ConnectedSocket() client: Socket,
-  ) {
-   
-    this.server.to(ROOM_GATEWAY.CLIENT).emit(ORDER_GATEWAY.APPROVED, 'dhdhh');
-  }
   @SubscribeMessage(ORDER_GATEWAY.DISTANCE)
   async ShowDistanceOrder(
     @MessageBody() { id }: { id: number },
     @ConnectedSocket() client: Socket,
   ) {
-    return this.orderService.getAddress(id);
+    const { time, userId } = await this.orderService.getAddress(id);
+
+    if (time < 2) {
+      this.server
+        .to(ROOM_GATEWAY.CLIENT + userId)
+        .emit(ORDER_GATEWAY.DISTANCE, {
+          message: time,
+        });
+    }
   }
 
   @OnEvent(ORDER_EVENTS.CREATE)
   showOrder(@MessageBody() payload) {
-    return payload;
+    this.server.to(ROOM_GATEWAY.DELIVERY).emit(ORDER_GATEWAY.CERATE, payload);
   }
 
   @OnEvent(ORDER_EVENTS.UPDATE_STATUS)
   updateStatus(
     @MessageBody() { status, clientId }: { status: Status; clientId: number },
   ) {
-   
     this.server
-      .to(ROOM_GATEWAY.CLIENT)
-      .emit(ORDER_GATEWAY.APPROVED, { status, clientId });
+      .to(ROOM_GATEWAY.CLIENT + clientId)
+      .emit(ORDER_GATEWAY.UPDATE_STATUS, { status, clientId });
   }
 }

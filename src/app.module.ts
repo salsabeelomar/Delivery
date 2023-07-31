@@ -1,4 +1,4 @@
-import { Module } from '@nestjs/common';
+import { Module, MiddlewareConsumer } from '@nestjs/common';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { ConfigModule } from '@nestjs/config';
@@ -10,23 +10,37 @@ import { UserModule } from './modules/user/user.module';
 import { OrderModule } from './modules/order/order.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AddressModule } from './modules/address/address.module';
-import {
-  utilities as nestWinstonModuleUtilities,
-  WinstonModule,
-} from 'nest-winston';
-import * as winston from 'winston';
+import { WinstonModule } from 'nest-winston';
+import { format, transports } from 'winston';
+import { LoggerMiddleware } from './common/middleware/logger.middleware';
 
 @Module({
   imports: [
     WinstonModule.forRoot({
       transports: [
-        new winston.transports.Console({
-          format: winston.format.combine(
-            winston.format.timestamp(),
-            winston.format.ms(),
-            nestWinstonModuleUtilities.format.nestLike('MyApp', {
-              colors: true,
-              prettyPrint: true,
+        new transports.DailyRotateFile({
+          filename: `logs/%DATE%-error.log`,
+          level: 'error',
+          format: format.combine(format.timestamp(), format.json()),
+          datePattern: 'YYYY-MM-DD',
+          zippedArchive: false,
+          maxFiles: '30d',
+        }),
+
+        new transports.DailyRotateFile({
+          filename: `logs/%DATE%-combined.log`,
+          format: format.combine(format.timestamp(), format.json()),
+          datePattern: 'YYYY-MM-DD',
+          zippedArchive: false,
+          maxFiles: '30d',
+        }),
+        new transports.Console({
+          format: format.combine(
+            format.cli(),
+            format.splat(),
+            format.timestamp(),
+            format.printf((info) => {
+              return `${info.timestamp} ${info.level}: ${info.message}`;
             }),
           ),
         }),
@@ -47,4 +61,8 @@ import * as winston from 'winston';
   controllers: [AppController],
   providers: [AppService],
 })
-export class AppModule {}
+export class AppModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer.apply(LoggerMiddleware).forRoutes('*');
+  }
+}

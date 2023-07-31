@@ -114,7 +114,7 @@ export class OrderService {
       },
       {
         where: { id: orderId, userId },
-        transaction,
+        // transaction,
       },
     );
     CheckExisting(updateOrder[0], BadRequestException, 'Failed to update name');
@@ -130,6 +130,7 @@ export class OrderService {
     userId: number,
     transaction: Transaction,
   ) {
+    console.log({ status, orderId, userId });
     const updateOrder = await this.orderRepo.update(
       {
         status: status,
@@ -151,7 +152,7 @@ export class OrderService {
       status,
       clientId: userId,
     });
-    this.logger.log('Update Successfully Order Status');
+
     return {
       message: `Status Updated to ${status} Successfully`,
     };
@@ -177,9 +178,11 @@ export class OrderService {
   }
   async getAddress(orderId: number) {
     const order = await this.orderRepo.findByPk(orderId, {
-      attributes: ['addressId'],
+      attributes: ['addressId', 'userId'],
     });
     this.logger.log(' Order Address ' + order.addressId);
-    return await this.addressService.calculateDistance(order.addressId);
+    const time = await this.addressService.calculateDistance(order.addressId);
+
+    return { time, userId: order.userId };
   }
 }
