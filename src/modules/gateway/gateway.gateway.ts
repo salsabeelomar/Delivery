@@ -1,39 +1,47 @@
 import {
+  ConnectedSocket,
+  MessageBody,
   OnGatewayConnection,
   OnGatewayDisconnect,
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  OnGatewayInit,
 } from '@nestjs/websockets';
 import {
   UnauthorizedException,
   UseGuards,
   ForbiddenException,
   BadRequestException,
+  Inject,
+  Logger,
 } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
 import { TokenExpiredError } from 'jsonwebtoken';
 import { UserService } from 'src/modules/user/user.service';
-import { EventEmitter2, OnEvent } from '@nestjs/event-emitter';
+import { OnEvent } from '@nestjs/event-emitter';
 import { CheckExisting } from 'src/common/utils/checkExisting';
 import { ROOM_GATEWAY, ORDER_GATEWAY } from 'src/common/gateways';
 import { ORDER_EVENTS } from 'src/common/events';
+import { Status } from 'src/common/types/enum/status';
+import { OrderService } from '../order/order.service';
+import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 
-@UseGuards()
-@WebSocketGateway()
+@WebSocketGateway(8080)
 export class GatewayService
-  implements OnGatewayConnection, OnGatewayDisconnect
+  implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
 {
   constructor(
     private jwt: JwtService,
     private userService: UserService,
-    // private orderService: OrderService,
-    private eventEmitter: EventEmitter2,
+    @Inject(OrderService) private orderService: OrderService,
+    @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) {}
   @WebSocketServer()
   server: Server;
-
+  afterInit(server: any) {
+  }
   async handleConnection(client: Socket) {
     const token = client.handshake.headers.authorization.split('Bearer ')[1];
     try {
@@ -67,18 +75,43 @@ export class GatewayService
     }
   }
 
-  handleDisconnect(client: Socket) {
+  handleDisconnect(@ConnectedSocket() client: Socket) {
     console.log('Client disconnected:', client.id);
   }
 
   @SubscribeMessage(ORDER_GATEWAY.CERATE)
-  async createOrder(client: Socket, payload: any) {
+  async createOrder(@ConnectedSocket() client: Socket, payload: any) {
     return payload;
   }
-  @OnEvent(ORDER_EVENTS.CREATE)
-  showOrder(payload) {
-    this.server.to('delivery').emit(ORDER_GATEWAY.CERATE, payload);
+
+  @SubscribeMessage(ORDER_GATEWAY.APPROVED)
+  async approvedOrder(
+    @MessageBody() payload,
+    @ConnectedSocket() client: Socket,
+  ) {
+   
+    this.server.to(ROOM_GATEWAY.CLIENT).emit(ORDER_GATEWAY.APPROVED, 'dhdhh');
+  }
+  @SubscribeMessage(ORDER_GATEWAY.DISTANCE)
+  async ShowDistanceOrder(
+    @MessageBody() { id }: { id: number },
+    @ConnectedSocket() client: Socket,
+  ) {
+    return this.orderService.getAddress(id);
   }
 
-  
+  @OnEvent(ORDER_EVENTS.CREATE)
+  showOrder(@MessageBody() payload) {
+    return payload;
+  }
+
+  @OnEvent(ORDER_EVENTS.UPDATE_STATUS)
+  updateStatus(
+    @MessageBody() { status, clientId }: { status: Status; clientId: number },
+  ) {
+   
+    this.server
+      .to(ROOM_GATEWAY.CLIENT)
+      .emit(ORDER_GATEWAY.APPROVED, { status, clientId });
+  }
 }

@@ -9,6 +9,7 @@ import {
 import { InjectModel } from '@nestjs/sequelize';
 import { Address } from 'src/modules/address/entities/address.entity';
 import { User } from 'src/modules/auth/entities/user.entity';
+import { Status } from 'src/common/types/enum/status';
 @Table({
   tableName: 'orders',
   deletedAt: true,
@@ -44,7 +45,7 @@ export class Order extends Model {
     type: DataType.ENUM('Approved', 'Pending', 'Cancelled'),
     allowNull: false,
   })
-  status: string;
+  status: Status;
 
   @Column({
     type: DataType.DOUBLE,
@@ -68,8 +69,9 @@ export class Order extends Model {
   @ForeignKey(() => User)
   @Column({
     type: DataType.INTEGER,
+    allowNull: false,
   })
-  clientId: number;
+  userId: number;
 
   @ForeignKey(() => User)
   @Column({

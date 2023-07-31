@@ -15,13 +15,12 @@ export class Roles implements CanActivate {
 
   canActivate(context: ExecutionContext) {
     const roles = this.reflect.get<Role[]>('roles', context.getHandler());
-    console.log(roles);
     if (!roles) return true;
 
     const request = context.switchToHttp().getRequest();
 
     CheckExisting(request.user, UnauthorizedException);
-    
+
     const role = request.user.role;
 
     CheckExisting(roles === role, ForbiddenException);

@@ -35,11 +35,14 @@
     "dotenv": "^16.3.1",
     "eventemitter2": "^6.4.9",
     "mysql2": "^3.5.2",
+    "nest-winston": "^1.9.3",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "sequelize": "^6.19.0",
     "sequelize-cli": "^5.5.1",
-    "sequelize-typescript": "^2.1.5"
+    "sequelize-typescript": "^2.1.5",
+    "winston": "^3.10.0",
+    "winston-daily-rotate-file": "^4.7.1"
   },
   "devDependencies": {
     "@nestjs/cli": "^10.0.0",

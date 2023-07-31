@@ -1,4 +1,5 @@
 export const ORDER_GATEWAY = {
-    CERATE: 'createOrder',
-  };
-  
+  CERATE: 'createOrder',
+  APPROVED: 'approvedOrder',
+  DISTANCE: 'distanceOrder',
+};

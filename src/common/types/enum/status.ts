@@ -1,5 +1,5 @@
 export enum Status {
-  approved = 'Approved',
-  pending = 'Pending',
-  cancelled = 'Cancelled',
+  Approved = 'Approved',
+  Pending = 'Pending',
+  Cancelled = 'Cancelled',
 }

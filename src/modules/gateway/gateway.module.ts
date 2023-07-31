@@ -2,10 +2,13 @@ import { Module } from '@nestjs/common';
 import { GatewayService } from './gateway.gateway';
 import { JwtModule } from '@nestjs/jwt';
 import { ConfigService } from '@nestjs/config';
-import { UserModule } from 'src/modules/user/user.module';
 import { UserService } from 'src/modules/user/user.service';
 import { authProvider } from 'src/modules/auth/auth.providers';
-// import { OrderService } from 'src/modules/order/order.service';
+import { OrderService } from '../order/order.service';
+import { OrderProvider } from '../order/order.providers';
+import { AddressService } from '../address/address.service';
+import { addressProvider } from '../address/address.providers';
+
 
 @Module({
   imports: [
@@ -18,6 +21,14 @@ import { authProvider } from 'src/modules/auth/auth.providers';
       global: true,
     }),
   ],
-  providers: [GatewayService, UserService, ...authProvider],
+  providers: [
+    AddressService,
+    GatewayService,
+    UserService,
+    OrderService,
+    ...addressProvider,
+    ...authProvider,
+    ...OrderProvider,
+  ],
 })
 export class GatewayModule {}
