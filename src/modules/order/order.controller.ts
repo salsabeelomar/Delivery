@@ -6,6 +6,7 @@ import {
   UseInterceptors,
   Put,
   Query,
+  Delete,
   Param,
   ParseIntPipe,
 } from '@nestjs/common';
@@ -18,6 +19,7 @@ import { TransactionInter } from 'src/common/interceptor/transaction.interceptor
 import { TransactionDec } from 'src/common/decorator/transaction.decorator';
 import { Transaction } from 'sequelize';
 import { Status } from 'src/common/types/enum/status';
+import { UserType } from '../user/dto/user.dto';
 
 @Controller('order')
 @UseInterceptors(TransactionInter)
@@ -25,58 +27,68 @@ export class OrderController {
   constructor(private orderService: OrderService) {}
 
   @Roles(Role.client)
-  @Post('')
+  @Post()
   async createOrder(
-    @Body() orderInfo: OrderType,
-    @User() { id }: { id: number },
+    @Body() orderInfo: Omit<OrderType, 'status'>,
+    @User() user: UserType,
     @TransactionDec() transaction: Transaction,
   ) {
-    return await this.orderService.addOrder(orderInfo, id, transaction);
+    return this.orderService.addOrder(orderInfo, user.id, transaction);
   }
 
   @Roles(Role.client)
-  @Put('')
+  @Put()
   async updateOrder(
-    @User() { id }: { id: number },
+    @User() user: UserType,
     @TransactionDec() transaction: Transaction,
-    @Body('name') name: string,
-    @Query('orderId') orderId: number,
+    @Body() name: Partial<OrderType>,
+    @Query() order: Partial<OrderType>,
   ) {
-    return await this.orderService.updateOrder(name, id, orderId, transaction);
+    return this.orderService.updateOrder(
+      name.name,
+      user,
+      order.id,
+      transaction,
+    );
+  }
+
+  @Roles(Role.client)
+  @Delete()
+  async deleteOrder(
+    @User() user: UserType,
+    @TransactionDec() transaction: Transaction,
+    @Query() orderId: Partial<OrderType>,
+  ) {
+    return this.orderService.deleteOrder(orderId.id, user, transaction);
   }
 
   @Roles(Role.manager)
-  @Get('')
-  async showOrder(
-    @User() { id }: { id: number },
-    @TransactionDec() transaction: Transaction,
-  ) {
-    return await this.orderService.showOrder(id, transaction);
+  @Get()
+  async showOrder(@TransactionDec() transaction: Transaction) {
+  
+    return this.orderService.showOrder(transaction);
   }
 
   @Roles(Role.delivery)
   @Get(':id')
   async showOrderById(
-    @Param() { id }: { id: number },
+    @Param() orderId: Partial<OrderType>,
     @TransactionDec() transaction: Transaction,
   ) {
-    return await this.orderService.showOrderById(id, transaction);
+    return this.orderService.showOrderById(orderId.id, transaction);
   }
 
   @Roles(Role.delivery)
   @Put('update')
   async updateStatus(
-    @Query('orderId', new ParseIntPipe())
-    orderId: number,
-    @Query('status')
-    status: Status,
+    @Query() order: Partial<OrderType>,
     @TransactionDec() transaction: Transaction,
-    @User() { id }: { id: number },
+    @User() user: UserType,
   ) {
-    return await this.orderService.updateStatus(
-      status,
-      orderId,
-      id,
+    return this.orderService.updateStatus(
+      order.status,
+      order.id,
+      user,
       transaction,
     );
   }

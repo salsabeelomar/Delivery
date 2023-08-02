@@ -1,20 +1,18 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { User } from '../auth/entities/user.entity';
 import { ProviderConstants } from 'src/common/constant/providers.constant';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
-
+import { WinstonLogger } from 'src/common/logging/winston.logger';
+import { UserType } from './dto/user.dto';
 @Injectable()
 export class UserService {
-  constructor(
-    @Inject(ProviderConstants.AUTH) private userRepo: typeof User,
-    @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
-  ) {}
+  private readonly logger = new WinstonLogger();
+  constructor(@Inject(ProviderConstants.AUTH) private userRepo: typeof User) {}
 
   async getUserById(id: number) {
     const user = await this.userRepo.findByPk(id, {
       attributes: ['id', 'email', 'role'],
     });
-    const userData = {
+    const userData: UserType = {
       email: user.getDataValue('email'),
       id: user.getDataValue('id'),
       role: user.getDataValue('role'),

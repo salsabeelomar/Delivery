@@ -1,14 +1,14 @@
-import { Injectable, Inject, Logger } from '@nestjs/common';
+import { Injectable, Inject } from '@nestjs/common';
 import { Delivery } from './entities/delivery.entity';
 import { ProviderConstants } from 'src/common/constant/providers.constant';
 import { Transaction } from 'sequelize';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { WinstonLogger } from 'src/common/logging/winston.logger';
 
 @Injectable()
 export class DeliveryService {
+  private readonly logger = new WinstonLogger();
   constructor(
     @Inject(ProviderConstants.DELIVERY) private deliveryRepo: typeof Delivery,
-    @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) {}
 
   async createDelivery(

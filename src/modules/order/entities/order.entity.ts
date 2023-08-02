@@ -5,15 +5,27 @@ import {
   DataType,
   ForeignKey,
   BelongsTo,
+  Scopes,
 } from 'sequelize-typescript';
-import { InjectModel } from '@nestjs/sequelize';
-import { Address } from 'src/modules/address/entities/address.entity';
 import { User } from 'src/modules/auth/entities/user.entity';
 import { Status } from 'src/common/types/enum/status';
+
+@Scopes(() => ({
+  times: {
+    attributes: {
+      exclude: [
+        'createdAt',
+        'updatedAt',
+        'updatedBy',
+        'deletedAt',
+        'deletedBy',
+      ],
+    },
+  },
+}))
 @Table({
   tableName: 'orders',
   deletedAt: true,
-  underscored: true,
 })
 export class Order extends Model {
   @Column({

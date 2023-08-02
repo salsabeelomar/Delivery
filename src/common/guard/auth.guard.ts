@@ -2,23 +2,21 @@ import {
   CanActivate,
   ExecutionContext,
   Injectable,
-  Inject,
   UnauthorizedException,
-  Logger,
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { UserService } from 'src/modules/user/user.service';
 import { CheckExisting } from '../utils/checkExisting';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { WinstonLogger } from '../logging/winston.logger';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
+  private readonly logger = new WinstonLogger();
   constructor(
     private readonly reflect: Reflector,
     private readonly userService: UserService,
     private readonly jwt: JwtService,
-    // @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) {}
   async canActivate(context: ExecutionContext) {
     const checkPublic = this.reflect.get('isPublic', context.getHandler());
@@ -34,7 +32,7 @@ export class AuthGuard implements CanActivate {
       const user = await this.userService.getUserById(decoded.sub);
       if (user) request.user = user;
     } catch (error) {
-      // this.logger.error('User not authorized');
+      this.logger.error('User not authorized', ' in Auth guard');
       throw new UnauthorizedException();
     }
 

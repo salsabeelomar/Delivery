@@ -35,6 +35,26 @@ module.exports = {
             allowNull: false,
             type: Sequelize.DATE,
           },
+          deletedAt: {
+            allowNull: false,
+            type: Sequelize.DATE,
+          },
+          updatedBy: {
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            references: {
+              model: 'users',
+              key: 'id',
+            },
+          },
+          deletedBy: {
+            type: Sequelize.INTEGER,
+            allowNull: false,
+            references: {
+              model: 'users',
+              key: 'id',
+            },
+          },
         },
         { transaction: t },
       );

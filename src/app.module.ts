@@ -11,40 +11,20 @@ import { OrderModule } from './modules/order/order.module';
 import { EventEmitterModule } from '@nestjs/event-emitter';
 import { AddressModule } from './modules/address/address.module';
 import { WinstonModule } from 'nest-winston';
-import { format, transports } from 'winston';
 import { LoggerMiddleware } from './common/middleware/logger.middleware';
+import * as winston from 'winston';
 
 @Module({
   imports: [
     WinstonModule.forRoot({
-      transports: [
-        new transports.DailyRotateFile({
-          filename: `logs/%DATE%-error.log`,
-          level: 'error',
-          format: format.combine(format.timestamp(), format.json()),
-          datePattern: 'YYYY-MM-DD',
-          zippedArchive: false,
-          maxFiles: '30d',
+      transports: [new winston.transports.Console()],
+      format: winston.format.combine(
+        winston.format.timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        winston.format.colorize(),
+        winston.format.printf(({ timestamp, level, message }) => {
+          return `[${timestamp}] ${level}: ${message}`;
         }),
-
-        new transports.DailyRotateFile({
-          filename: `logs/%DATE%-combined.log`,
-          format: format.combine(format.timestamp(), format.json()),
-          datePattern: 'YYYY-MM-DD',
-          zippedArchive: false,
-          maxFiles: '30d',
-        }),
-        new transports.Console({
-          format: format.combine(
-            format.cli(),
-            format.splat(),
-            format.timestamp(),
-            format.printf((info) => {
-              return `${info.timestamp} ${info.level}: ${info.message}`;
-            }),
-          ),
-        }),
-      ],
+      ),
     }),
     EventEmitterModule.forRoot(),
     DatabaseModule,

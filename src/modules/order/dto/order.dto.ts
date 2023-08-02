@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsNumber, IsString, MaxLength } from 'class-validator';
+import { Status } from 'src/common/types/enum/status';
 import { AddressType } from 'src/modules/address/dto/address.dto';
 
 export class OrderType {
@@ -20,6 +21,12 @@ export class OrderType {
   @IsNumber()
   @IsNotEmpty()
   price: number;
+
+  @IsNumber()
+  @IsNotEmpty()
+  id: number;
+
+  status: Status;
 
   address: Omit<AddressType, 'orderId'>;
 }

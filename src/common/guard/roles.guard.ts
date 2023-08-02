@@ -19,11 +19,11 @@ export class Roles implements CanActivate {
 
     const request = context.switchToHttp().getRequest();
 
-    CheckExisting(request.user, UnauthorizedException);
+    CheckExisting(request.user, UnauthorizedException, "User not Exist  in Role Guard");
 
     const role = request.user.role;
 
-    CheckExisting(roles === role, ForbiddenException);
+    CheckExisting(roles === role, ForbiddenException, " not match Role");
     return true;
   }
 }

@@ -5,20 +5,19 @@ import {
   CallHandler,
   BadGatewayException,
   Inject,
-  Logger,
 } from '@nestjs/common';
 import { Sequelize } from 'sequelize-typescript';
 import { DATABASE_CONSTANT } from '../constant';
 import { Transaction } from 'sequelize';
 import { Observable, catchError, tap } from 'rxjs';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { WinstonLogger } from '../logging/winston.logger';
 
 @Injectable()
 export class TransactionInter implements NestInterceptor {
+  private readonly logger = new WinstonLogger();
   constructor(
     @Inject(DATABASE_CONSTANT.DATABASE_PROVIDE)
     private sequelizeInstance: Sequelize,
-    @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) {}
   async intercept(
     context: ExecutionContext,
@@ -36,7 +35,7 @@ export class TransactionInter implements NestInterceptor {
         transaction.commit();
       }),
       catchError((err) => {
-        this.logger.error('Query Rollback');
+        this.logger.error('Query Rollback', 'in TransactionInter ');
         transaction.rollback();
         throw new BadGatewayException(err);
       }),

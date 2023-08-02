@@ -1,17 +1,17 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable } from '@nestjs/common';
 import { Address } from './entities/address.entity';
 import { ProviderConstants } from 'src/common/constant/providers.constant';
 
 import { AddressType } from './dto/address.dto';
 import { Transaction } from 'sequelize';
 import { Order } from '../order/entities/order.entity';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { WinstonLogger } from 'src/common/logging/winston.logger';
 
 @Injectable()
 export class AddressService {
+  private readonly logger = new WinstonLogger();
   constructor(
     @Inject(ProviderConstants.ADDRESS) private addressRepo: typeof Address,
-    @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) {}
   async addAddress(addressInfo: AddressType, transaction: Transaction) {
     const newAdd = await this.addressRepo.create(

@@ -10,11 +10,9 @@ import {
 } from '@nestjs/websockets';
 import {
   UnauthorizedException,
-  UseGuards,
   ForbiddenException,
   BadRequestException,
   Inject,
-  Logger,
 } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { JwtService } from '@nestjs/jwt';
@@ -25,18 +23,18 @@ import { CheckExisting } from 'src/common/utils/checkExisting';
 import { ROOM_GATEWAY, ORDER_GATEWAY } from 'src/common/gateways';
 import { ORDER_EVENTS } from 'src/common/events';
 import { Status } from 'src/common/types/enum/status';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { AddressService } from '../address/address.service';
+import { WinstonLogger } from 'src/common/logging/winston.logger';
 
 @WebSocketGateway(8080)
 export class GatewayService
   implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
 {
+  private readonly logger = new WinstonLogger();
   constructor(
     private jwt: JwtService,
     private userService: UserService,
     @Inject(AddressService) private addressService: AddressService,
-    @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
   ) {}
   @WebSocketServer()
   server: Server;
@@ -48,7 +46,7 @@ export class GatewayService
       const user = await this.userService.getUserById(decoded.sub);
 
       CheckExisting(user, UnauthorizedException);
-
+      console.log(user.role);
       switch (user.role) {
         case ROOM_GATEWAY.DELIVERY:
           client.join(ROOM_GATEWAY.DELIVERY);

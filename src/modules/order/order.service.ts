@@ -1,9 +1,4 @@
-import {
-  Injectable,
-  Logger,
-  Inject,
-  BadRequestException,
-} from '@nestjs/common';
+import { Injectable, Inject, BadRequestException } from '@nestjs/common';
 import { ProviderConstants } from 'src/common/constant/providers.constant';
 import { Order } from './entities/order.entity';
 import { AddressService } from '../address/address.service';
@@ -15,25 +10,26 @@ import { User } from '../auth/entities/user.entity';
 import { CheckExisting } from 'src/common/utils/checkExisting';
 import { ORDER_EVENTS } from 'src/common/events';
 import { Status } from 'src/common/types/enum/status';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
 import { DeliveryService } from '../delivery/delivery.service';
+import { WinstonLogger } from 'src/common/logging/winston.logger';
+import { UserType } from '../user/dto/user.dto';
 
 @Injectable()
 export class OrderService {
+  private readonly logger = new WinstonLogger();
   constructor(
     @Inject(ProviderConstants.ORDER) private orderRepo: typeof Order,
     @Inject(AddressService) private addressService: AddressService,
     @Inject(DeliveryService) private deliveryService: DeliveryService,
-    @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
     private readonly eventEmitter: EventEmitter2,
   ) {}
 
   async addOrder(
-    orderInfo: OrderType,
+    orderInfo: Omit<OrderType, 'status'>,
     userId: number,
     transaction: Transaction,
   ) {
-    const order = await this.orderRepo.create(
+    const order = await this.orderRepo.scope('times').create(
       {
         ...orderInfo,
         status: 'Pending',
@@ -41,7 +37,7 @@ export class OrderService {
       },
       { transaction },
     );
-    this.logger.log('new order added ', order);
+    this.logger.log(`new order added  ${order}`);
 
     const address = await this.addressService.addAddress(
       {
@@ -50,7 +46,7 @@ export class OrderService {
       },
       transaction,
     );
-    this.logger.log('new Address added ', address);
+    this.logger.log(`new Address added id=  ${address.id}`);
     const payload = {
       order: {
         id: order.id,
@@ -74,32 +70,16 @@ export class OrderService {
     };
   }
 
-  async showOrder(user: number, transaction: Transaction) {
-    const excluded = [
-      'createdAt',
-      'updatedAt',
-      'updatedBy',
-      'deletedAt',
-      'deletedBy',
-    ];
-    const allOrder = await this.orderRepo.findAll({
+  async showOrder(transaction: Transaction) {
+    const allOrder = await this.orderRepo.scope('times').findAll({
       include: [
         {
-          model: Address,
-          attributes: {
-            exclude: excluded,
-          },
-        },
-        {
           model: User,
-          attributes: {
-            exclude: excluded,
-          },
         },
       ],
       transaction,
     });
-    this.logger.log('Find All order from manager ', allOrder);
+    this.logger.log(`Find All order from manager ', ${allOrder}`);
     return {
       data: {
         orders: allOrder,
@@ -108,17 +88,17 @@ export class OrderService {
   }
   async updateOrder(
     name: string,
-    userId: number,
+    user: UserType,
     orderId: number,
     transaction: Transaction,
   ) {
-    const updateOrder = await this.orderRepo.update(
+    const updateOrder = await this.orderRepo.scope('times').update(
       {
         name,
-        updateBy: userId,
+        updateBy: user.id,
       },
       {
-        where: { id: orderId, userId },
+        where: { id: orderId, userId: user.id },
         transaction,
       },
     );
@@ -132,13 +112,13 @@ export class OrderService {
   async updateStatus(
     status: Status,
     orderId: number,
-    userId: number,
+    user: UserType,
     transaction: Transaction,
   ) {
-    const updateOrder = await this.orderRepo.update(
+    const updateOrder = await this.orderRepo.scope('times').update(
       {
         status: status,
-        updateBy: userId,
+        updateBy: user.id,
       },
       {
         where: { id: orderId },
@@ -146,8 +126,9 @@ export class OrderService {
       },
     );
     if (status === 'Approved') {
-      await this.deliveryService.createDelivery(userId, orderId, transaction);
+      await this.deliveryService.createDelivery(user.id, orderId, transaction);
     }
+
     CheckExisting(
       updateOrder[0],
       BadRequestException,
@@ -156,7 +137,7 @@ export class OrderService {
 
     this.eventEmitter.emit(ORDER_EVENTS.UPDATE_STATUS, {
       status,
-      clientId: userId,
+      clientId: user.id,
     });
 
     return {
@@ -165,23 +146,37 @@ export class OrderService {
   }
 
   async showOrderById(orderId: number, transaction: Transaction) {
-    const order = await this.orderRepo.findByPk(orderId, {
-      include: [{ model: User }, { model: Address }],
-      attributes: {
-        exclude: [
-          'createdAt',
-          'updatedAt',
-          'updatedBy',
-          'deletedAt',
-          'deletedBy',
-        ],
-      },
+    const order = await this.orderRepo.scope('times').findByPk(orderId, {
+      include: [{ model: User }],
       transaction,
     });
-    this.logger.log('Get Order By Id', order);
+    this.logger.log(`Get Order By Id ${order}`);
 
     return {
       data: order,
+    };
+  }
+  async deleteOrder(id: number, user: UserType, transaction: Transaction) {
+    const deletedOrder = await this.orderRepo.update(
+      {
+        deleteBy: id,
+        deletedAt: new Date(),
+      },
+      {
+        where: {
+          id,
+          userId: user.id,
+        },
+        transaction,
+      },
+    );
+
+    CheckExisting(deletedOrder[0], BadRequestException, 'Order not found');
+
+    this.logger.log(`Delete Order By user = ${user.id}`);
+
+    return {
+      message: 'Order deleted  successfully',
     };
   }
 }

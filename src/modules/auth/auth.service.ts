@@ -3,7 +3,6 @@ import {
   Injectable,
   BadRequestException,
   UnauthorizedException,
-  Logger,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
@@ -12,13 +11,14 @@ import { User } from './entities/user.entity';
 import { SignInType, SignUpType, payloadToken } from './dto';
 import { ProviderConstants } from 'src/common/constant/providers.constant';
 import { CheckExisting } from 'src/common/utils/checkExisting';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { WinstonLogger } from 'src/common/logging/winston.logger';
 
 @Injectable()
 export class AuthService {
+  private readonly logger = new WinstonLogger();
+
   constructor(
     @Inject(ProviderConstants.AUTH) private authRepo: typeof User,
-    @Inject(WINSTON_MODULE_NEST_PROVIDER) private readonly logger: Logger,
     private readonly jwt: JwtService,
   ) {}
 
